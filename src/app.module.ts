@@ -1,8 +1,13 @@
 import { BadRequestException, Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { UserModule } from './user/user.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './auth/auth.module';
 import { BunnyModule } from './bunny/bunny.module';
+import { WalletModule } from './wallet/wallet.module';
+import { TransactionModule } from './transaction/transaction.module';
+import { GiftModule } from './gift/gift.module';
+import { WithdrawalModule } from './withdrawal/withdrawal.module';
+import { ResourceAppModule } from './resource-apps/resource-app.module';
 
 @Module({
   imports: [
@@ -23,8 +28,13 @@ import { BunnyModule } from './bunny/bunny.module';
         };
       },
     }),
-    UserModule,
+    AuthModule,
     BunnyModule,
+    WalletModule,
+    TransactionModule,
+    GiftModule,
+    WithdrawalModule,
+    ResourceAppModule
   ],
 })
 export class AppModule {}

@@ -5,11 +5,16 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { Multer } from 'multer'; // ✅ Import Multer types correctly
 import { IBunnyHelper } from './interface/bunny.helper.interface';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorator/roles.decorator';
+import { UserRole } from '../enum/roles.enum';
 
 @ApiTags('Bunny Storage')
 @Controller('bunny')
@@ -19,6 +24,9 @@ export class BunnyController {
   ) {}
 
   @Post('upload')
+  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Upload a file to Bunny.net' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
@@ -39,7 +47,11 @@ export class BunnyController {
     const { storageUrl, userId } = body;
     if (!storageUrl) throw new Error('storageUrl is required');
     return {
-      data: await this.bunnyHelper.uploadFile(file, storageUrl, userId as string),
+      data: await this.bunnyHelper.uploadFile(
+        file,
+        storageUrl,
+        userId as string,
+      ),
     };
   }
 }

@@ -54,15 +54,6 @@ export class AuthGuard implements CanActivate {
           new UnauthorizedException('Authorization token is invalid'),
         );
       }
-      if (!user.isVerified) {
-        throw new UnauthorizedException('User is not verified');
-      }
-      if (user.isBlocked) {
-        throw new UnauthorizedException('User is blocked');
-      }
-      if (user.isSuspend) {
-        throw new UnauthorizedException('User is suspended');
-      }
       request['user'] = payload;
       request['fullUser'] = user;
     } catch (error) {
