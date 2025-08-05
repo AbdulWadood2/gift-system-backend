@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Gift } from './schema/gift.schema';
+import { Injectable, Inject } from '@nestjs/common';
 import { IGiftService } from './interface/gift.service.interface';
 import { IGiftHelper } from './interface/gift.helper.interface';
+import { Gift } from './schema/gift.schema';
+import { GiftResponseDto } from './dto/gift-response.dto';
 import { logAndThrowError } from '../utils/error.utils';
 
 @Injectable()
@@ -10,7 +11,10 @@ export class GiftService implements IGiftService {
     @Inject('IGiftHelper') private readonly giftHelper: IGiftHelper,
   ) {}
 
-  async getAllGifts(category?: string, isActive?: boolean): Promise<Gift[]> {
+  async getAllGifts(
+    category?: string,
+    isActive?: boolean,
+  ): Promise<GiftResponseDto[]> {
     try {
       return await this.giftHelper.getAllGifts(category, isActive);
     } catch (error) {
@@ -18,7 +22,7 @@ export class GiftService implements IGiftService {
     }
   }
 
-  async getGift(giftId: string): Promise<Gift> {
+  async getGift(giftId: string): Promise<GiftResponseDto> {
     try {
       return await this.giftHelper.getGift(giftId);
     } catch (error) {
@@ -26,7 +30,7 @@ export class GiftService implements IGiftService {
     }
   }
 
-  async createGift(giftData: Partial<Gift>): Promise<Gift> {
+  async createGift(giftData: Partial<Gift>): Promise<GiftResponseDto> {
     try {
       return await this.giftHelper.createGift(giftData);
     } catch (error) {
@@ -34,7 +38,7 @@ export class GiftService implements IGiftService {
     }
   }
 
-  async updateGift(giftId: string, updates: Partial<Gift>): Promise<Gift> {
+  async updateGift(giftId: string, updates: Partial<Gift>): Promise<GiftResponseDto> {
     try {
       return await this.giftHelper.updateGift(giftId, updates);
     } catch (error) {
@@ -44,13 +48,13 @@ export class GiftService implements IGiftService {
 
   async deleteGift(giftId: string): Promise<void> {
     try {
-      return await this.giftHelper.deleteGift(giftId);
+      await this.giftHelper.deleteGift(giftId);
     } catch (error) {
       throw logAndThrowError('error in deleteGift', error);
     }
   }
 
-  async getPopularGifts(limit?: number): Promise<Gift[]> {
+  async getPopularGifts(limit?: number): Promise<GiftResponseDto[]> {
     try {
       return await this.giftHelper.getPopularGifts(limit);
     } catch (error) {
@@ -58,7 +62,7 @@ export class GiftService implements IGiftService {
     }
   }
 
-  async getGiftsByCategory(category: string): Promise<Gift[]> {
+  async getGiftsByCategory(category: string): Promise<GiftResponseDto[]> {
     try {
       return await this.giftHelper.getGiftsByCategory(category);
     } catch (error) {

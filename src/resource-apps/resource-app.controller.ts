@@ -14,6 +14,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ResourceAppService } from './resource-app.service';
 import { ResourceApp } from './schema/resource-app.schema';
@@ -23,6 +24,8 @@ import { Roles } from '../auth/decorator/roles.decorator';
 import { UserRole } from '../enum/roles.enum';
 import { IResourceAppService } from './interface/resource-app.service.interface';
 import { NotificationPayload } from './interface/resource-app.helper.interface';
+import { CreateUpdateResourceAppDto } from './dto/create-update-resource-app.dto';
+import { ResourceAppDto } from './dto/resource-app.dto';
 
 @ApiTags('Resource Apps')
 @Controller('resource-apps')
@@ -48,8 +51,9 @@ export class ResourceAppController {
   async validateUser(
     @Param('appName') appName: string,
     @Param('userId') userId: string,
-  ): Promise<any> {
-    return this.resourceAppService.validateUser(appName, userId);
+  ): Promise<{ data: { isValid: boolean; user?: any } }> {
+    const result = await this.resourceAppService.validateUser(appName, userId);
+    return { data: result };
   }
 
   @Post('send-notification/:appName')
@@ -62,61 +66,70 @@ export class ResourceAppController {
   async sendNotification(
     @Param('appName') appName: string,
     @Body() notificationPayload: NotificationPayload,
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ data: { success: boolean } }> {
     await this.resourceAppService.sendNotification(
       appName,
       notificationPayload,
     );
-    return { success: true };
+    return { data: { success: true } };
   }
 
   // Admin APIs
   @Post()
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create resource app (Admin only)' })
+  @ApiBody({ type: CreateUpdateResourceAppDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Resource app created successfully',
-    type: ResourceApp,
+    type: ResourceAppDto,
   })
   async createResourceApp(
-    @Body() resourceAppData: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
-    return this.resourceAppService.createResourceApp(resourceAppData);
+    @Body() resourceAppData: CreateUpdateResourceAppDto,
+  ): Promise<{ data: ResourceAppDto }> {
+    const result =
+      await this.resourceAppService.createResourceApp(resourceAppData);
+    return { data: result };
   }
 
   @Post(':appName')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update resource app (Admin only)' })
   @ApiParam({ name: 'appName', description: 'Application name' })
+  @ApiBody({ type: CreateUpdateResourceAppDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Resource app updated successfully',
-    type: ResourceApp,
+    type: ResourceAppDto,
   })
   async updateResourceApp(
     @Param('appName') appName: string,
-    @Body() updates: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
-    return this.resourceAppService.updateResourceApp(appName, updates);
+    @Body() updates: CreateUpdateResourceAppDto,
+  ): Promise<{ data: ResourceAppDto }> {
+    const result = await this.resourceAppService.updateResourceApp(
+      appName,
+      updates,
+    );
+    return { data: result };
   }
 
   @Get()
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all resource apps (Admin only)' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Resource apps retrieved successfully',
-    type: [ResourceApp],
+    type: [ResourceAppDto],
   })
-  async getAllResourceApps(): Promise<ResourceApp[]> {
-    return this.resourceAppService.getAllResourceApps();
+  async getAllResourceApps(): Promise<{ data: ResourceAppDto[] }> {
+    const result = await this.resourceAppService.getAllResourceApps();
+    return { data: result };
   }
 
   @Post('delete/:appName')
@@ -131,8 +144,8 @@ export class ResourceAppController {
   })
   async deleteResourceApp(
     @Param('appName') appName: string,
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ data: { success: boolean } }> {
     const success = await this.resourceAppService.deleteResourceApp(appName);
-    return { success };
+    return { data: { success } };
   }
 }

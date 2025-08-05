@@ -1,4 +1,5 @@
 import { ResourceApp } from '../schema/resource-app.schema';
+import { ResourceAppDto } from '../dto/resource-app.dto';
 
 export interface ExternalUserProfile {
   _id: string;
@@ -18,7 +19,7 @@ export interface NotificationPayload {
 }
 
 export interface IResourceAppHelper {
-  getResourceApp(appName: string): Promise<ResourceApp>;
+  getResourceApp(appName: string): Promise<ResourceAppDto>;
   validateUser(appName: string, userId: string): Promise<ExternalUserProfile>;
   checkUserVerification(
     appName: string,
@@ -30,13 +31,13 @@ export interface IResourceAppHelper {
   ): Promise<void>;
   createResourceApp(
     resourceAppData: Partial<ResourceApp>,
-  ): Promise<ResourceApp>;
+  ): Promise<ResourceAppDto>;
   updateResourceApp(
     appName: string,
     updates: Partial<ResourceApp>,
-  ): Promise<ResourceApp>;
-  getAllResourceApps(): Promise<ResourceApp[]>;
+  ): Promise<ResourceAppDto>;
+  getAllResourceApps(): Promise<ResourceAppDto[]>;
   deleteResourceApp(appName: string): Promise<boolean>;
-  isResourceAppExist(appName: string): Promise<ResourceApp>;
-  isResourceAppExistNotError(appName: string): Promise<ResourceApp | null>;
+  isResourceAppExist(appName: string): Promise<ResourceAppDto>;
+  isResourceAppExistNotError(appName: string): Promise<ResourceAppDto | null>;
 }

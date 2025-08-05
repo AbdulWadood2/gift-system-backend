@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ResourceApp } from '../schema/resource-app.schema';
+import { ResourceAppDto } from '../dto/resource-app.dto';
 import { Model } from 'mongoose';
+import { plainToInstance } from 'class-transformer';
 import {
   IResourceAppHelper,
   ExternalUserProfile,
@@ -16,25 +18,33 @@ export class ResourceAppHelper implements IResourceAppHelper {
   ) {}
 
   // Get Resource App
-  async getResourceApp(appName: string): Promise<ResourceApp> {
-    return this.isResourceAppExist(appName);
+  async getResourceApp(appName: string): Promise<ResourceAppDto> {
+    const resourceApp = await this.isResourceAppExist(appName);
+    return plainToInstance(ResourceAppDto, resourceApp, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Is Resource App Exist
-  async isResourceAppExist(appName: string): Promise<ResourceApp> {
+  async isResourceAppExist(appName: string): Promise<ResourceAppDto> {
     const resourceApp = await this.resourceAppModel.findOne({ appName });
     if (!resourceApp) {
       throw new BadRequestException('Resource app not found');
     }
-    return resourceApp;
+    return plainToInstance(ResourceAppDto, resourceApp, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Is Resource App Exist Not Error
   async isResourceAppExistNotError(
     appName: string,
-  ): Promise<ResourceApp | null> {
+  ): Promise<ResourceAppDto | null> {
     const resourceApp = await this.resourceAppModel.findOne({ appName });
-    return resourceApp;
+    if (!resourceApp) return null;
+    return plainToInstance(ResourceAppDto, resourceApp, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Validate User from External App
@@ -43,7 +53,10 @@ export class ResourceAppHelper implements IResourceAppHelper {
     userId: string,
   ): Promise<ExternalUserProfile> {
     try {
-      const resourceApp = await this.isResourceAppExist(appName);
+      const resourceApp = await this.resourceAppModel.findOne({ appName });
+      if (!resourceApp) {
+        throw new BadRequestException('Resource app not found');
+      }
       const userUrl = `${resourceApp.getUserProfileEndpoint}/${userId}`;
 
       const response = await fetch(userUrl, {
@@ -77,7 +90,10 @@ export class ResourceAppHelper implements IResourceAppHelper {
     userId: string,
   ): Promise<ExternalEligibilityResponse> {
     try {
-      const resourceApp = await this.isResourceAppExist(appName);
+      const resourceApp = await this.resourceAppModel.findOne({ appName });
+      if (!resourceApp) {
+        throw new BadRequestException('Resource app not found');
+      }
       const verificationUrl = `${resourceApp.getUserVerificationEndpoint}/${userId}`;
 
       const response = await fetch(verificationUrl, {
@@ -115,7 +131,10 @@ export class ResourceAppHelper implements IResourceAppHelper {
     notificationPayload: NotificationPayload,
   ): Promise<void> {
     try {
-      const resourceApp = await this.isResourceAppExist(appName);
+      const resourceApp = await this.resourceAppModel.findOne({ appName });
+      if (!resourceApp) {
+        throw new BadRequestException('Resource app not found');
+      }
       const notificationUrl = `${resourceApp.sendNotificationEndpoint}/${notificationPayload.userId}`;
 
       const response = await fetch(notificationUrl, {
@@ -140,16 +159,19 @@ export class ResourceAppHelper implements IResourceAppHelper {
   // Create Resource App
   async createResourceApp(
     resourceAppData: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
+  ): Promise<ResourceAppDto> {
     const resourceApp = new this.resourceAppModel(resourceAppData);
-    return await resourceApp.save();
+    const savedResourceApp = await resourceApp.save();
+    return plainToInstance(ResourceAppDto, savedResourceApp, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Update Resource App
   async updateResourceApp(
     appName: string,
     updates: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
+  ): Promise<ResourceAppDto> {
     const resourceApp = await this.resourceAppModel.findOneAndUpdate(
       { appName },
       updates,
@@ -160,12 +182,17 @@ export class ResourceAppHelper implements IResourceAppHelper {
       throw new Error(`Resource app not found for appName: ${appName}`);
     }
 
-    return resourceApp;
+    return plainToInstance(ResourceAppDto, resourceApp, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Get All Resource Apps
-  async getAllResourceApps(): Promise<ResourceApp[]> {
-    return await this.resourceAppModel.find().exec();
+  async getAllResourceApps(): Promise<ResourceAppDto[]> {
+    const resourceApps = await this.resourceAppModel.find().exec();
+    return plainToInstance(ResourceAppDto, resourceApps, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // Delete Resource App

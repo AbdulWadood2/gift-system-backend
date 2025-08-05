@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Withdrawal } from '../schema/withdrawal.schema';
+import { WithdrawalResponseDto } from '../dto/withdrawal-response.dto';
 import { Model } from 'mongoose';
+import { plainToInstance } from 'class-transformer';
 import { IWithdrawalHelper } from '../interface/withdrawal.helper.interface';
 import { WithdrawalStatus } from '../../wallet/schema/wallet.schema';
 
@@ -13,21 +15,28 @@ export class WithdrawalHelper implements IWithdrawalHelper {
 
   async createWithdrawalRequest(
     withdrawalData: Partial<Withdrawal>,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     try {
       const withdrawal = new this.withdrawalModel(withdrawalData);
-      return await withdrawal.save();
+      const savedWithdrawal = await withdrawal.save();
+      return plainToInstance(WithdrawalResponseDto, savedWithdrawal, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
       throw new BadRequestException('Failed to create withdrawal request');
     }
   }
 
-  async getWithdrawalRequest(withdrawalId: string): Promise<Withdrawal> {
+  async getWithdrawalRequest(
+    withdrawalId: string,
+  ): Promise<WithdrawalResponseDto> {
     const withdrawal = await this.withdrawalModel.findOne({ withdrawalId });
     if (!withdrawal) {
       throw new BadRequestException('Withdrawal request not found');
     }
-    return withdrawal;
+    return plainToInstance(WithdrawalResponseDto, withdrawal, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async getUserWithdrawals(
@@ -35,7 +44,12 @@ export class WithdrawalHelper implements IWithdrawalHelper {
     appName: string,
     page: number = 1,
     limit: number = 20,
-  ): Promise<any> {
+  ): Promise<{
+    withdrawals: WithdrawalResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const skip = (page - 1) * limit;
 
     const withdrawals = await this.withdrawalModel
@@ -50,14 +64,19 @@ export class WithdrawalHelper implements IWithdrawalHelper {
       appName,
     });
 
-    return {
+    const transformedWithdrawals = plainToInstance(
+      WithdrawalResponseDto,
       withdrawals,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+      {
+        excludeExtraneousValues: true,
       },
+    );
+
+    return {
+      withdrawals: transformedWithdrawals,
+      total,
+      page,
+      limit,
     };
   }
 
@@ -66,7 +85,7 @@ export class WithdrawalHelper implements IWithdrawalHelper {
     status: string,
     adminUserId: string,
     notes?: string,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     const updateData: any = {
       status,
       adminUserId,
@@ -95,14 +114,16 @@ export class WithdrawalHelper implements IWithdrawalHelper {
       throw new BadRequestException('Withdrawal request not found');
     }
 
-    return updatedWithdrawal;
+    return plainToInstance(WithdrawalResponseDto, updatedWithdrawal, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async approveWithdrawal(
     withdrawalId: string,
     adminUserId: string,
     notes?: string,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     const withdrawal = await this.getWithdrawalRequest(withdrawalId);
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
@@ -121,7 +142,7 @@ export class WithdrawalHelper implements IWithdrawalHelper {
     withdrawalId: string,
     adminUserId: string,
     reason: string,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     const withdrawal = await this.getWithdrawalRequest(withdrawalId);
 
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
@@ -139,7 +160,12 @@ export class WithdrawalHelper implements IWithdrawalHelper {
   async getPendingWithdrawals(
     page: number = 1,
     limit: number = 20,
-  ): Promise<any> {
+  ): Promise<{
+    withdrawals: WithdrawalResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const skip = (page - 1) * limit;
 
     const withdrawals = await this.withdrawalModel
@@ -153,46 +179,49 @@ export class WithdrawalHelper implements IWithdrawalHelper {
       status: WithdrawalStatus.PENDING,
     });
 
-    return {
+    const transformedWithdrawals = plainToInstance(
+      WithdrawalResponseDto,
       withdrawals,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+      {
+        excludeExtraneousValues: true,
       },
+    );
+
+    return {
+      withdrawals: transformedWithdrawals,
+      total,
+      page,
+      limit,
     };
   }
 
-  async getWithdrawalStats(appName: string): Promise<any> {
+  async getWithdrawalStats(appName: string): Promise<{
+    totalWithdrawals: number;
+    totalAmount: number;
+    averageAmount: number;
+  }> {
     const stats = await this.withdrawalModel.aggregate([
       { $match: { appName } },
       {
         $group: {
-          _id: '$status',
-          count: { $sum: 1 },
+          _id: null,
+          totalWithdrawals: { $sum: 1 },
           totalAmount: { $sum: '$coinAmount' },
+          averageAmount: { $avg: '$coinAmount' },
         },
       },
     ]);
 
-    const totalWithdrawals = await this.withdrawalModel.countDocuments({
-      appName,
-    });
-    const totalAmount = await this.withdrawalModel.aggregate([
-      { $match: { appName } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$coinAmount' },
-        },
-      },
-    ]);
+    const result = stats[0] || {
+      totalWithdrawals: 0,
+      totalAmount: 0,
+      averageAmount: 0,
+    };
 
     return {
-      totalWithdrawals,
-      totalAmount: totalAmount[0]?.total || 0,
-      byStatus: stats,
+      totalWithdrawals: result.totalWithdrawals,
+      totalAmount: result.totalAmount,
+      averageAmount: result.averageAmount,
     };
   }
 

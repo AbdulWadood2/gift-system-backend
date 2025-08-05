@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ResourceApp } from './schema/resource-app.schema';
+import { ResourceAppDto } from './dto/resource-app.dto';
 import { IResourceAppService } from './interface/resource-app.service.interface';
 import {
   IResourceAppHelper,
@@ -38,9 +39,21 @@ export class ResourceAppService implements IResourceAppService {
 
   async createResourceApp(
     resourceAppData: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
+  ): Promise<ResourceAppDto> {
     try {
-      return await this.resourceAppHelper.createResourceApp(resourceAppData);
+      if (!resourceAppData.appName) {
+        throw new BadRequestException('appName is required');
+      }
+      const { appName, ...rest } = resourceAppData;
+      const existingResourceApp =
+        await this.resourceAppHelper.isResourceAppExistNotError(
+          resourceAppData.appName,
+        );
+      if (existingResourceApp) {
+        return await this.resourceAppHelper.updateResourceApp(appName, rest);
+      } else {
+        return await this.resourceAppHelper.createResourceApp(resourceAppData);
+      }
     } catch (error) {
       throw logAndThrowError('error in createResourceApp', error);
     }
@@ -49,7 +62,7 @@ export class ResourceAppService implements IResourceAppService {
   async updateResourceApp(
     appName: string,
     updates: Partial<ResourceApp>,
-  ): Promise<ResourceApp> {
+  ): Promise<ResourceAppDto> {
     try {
       return await this.resourceAppHelper.updateResourceApp(appName, updates);
     } catch (error) {
@@ -57,7 +70,7 @@ export class ResourceAppService implements IResourceAppService {
     }
   }
 
-  async getAllResourceApps(): Promise<ResourceApp[]> {
+  async getAllResourceApps(): Promise<ResourceAppDto[]> {
     try {
       return await this.resourceAppHelper.getAllResourceApps();
     } catch (error) {

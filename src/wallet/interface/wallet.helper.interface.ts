@@ -24,5 +24,11 @@ export interface IWalletHelper {
   ): Promise<WalletDto>;
   isWalletFrozen(userId: string, appName: AppName): Promise<boolean>;
   getUserWallets(userId: string): Promise<WalletDto[]>;
-  getWalletStats(appName: AppName): Promise<any>;
+  getWalletStats(
+    appName: AppName,
+  ): Promise<{
+    totalWallets: number;
+    totalBalance: number;
+    averageBalance: number;
+  }>;
 }

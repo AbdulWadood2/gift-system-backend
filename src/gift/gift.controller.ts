@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { GiftService } from './gift.service';
 import { Gift } from './schema/gift.schema';
@@ -25,6 +26,13 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorator/roles.decorator';
 import { UserRole } from '../enum/roles.enum';
+import { CreateGiftDto } from './dto/create-gift.dto';
+import { UpdateGiftDto } from './dto/update-gift.dto';
+import { GiftResponseDto } from './dto/gift-response.dto';
+import {
+  GetAllGiftsQueryDto,
+  GetPopularGiftsQueryDto,
+} from './dto/gift-query.dto';
 
 @ApiTags('Gifts')
 @Controller('gifts')
@@ -35,105 +43,105 @@ export class GiftController {
   ) {}
 
   @Get()
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all gifts' })
-  @ApiQuery({ name: 'category', required: false, type: String })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Gifts retrieved successfully',
-    type: [Gift],
+    type: [GiftResponseDto],
   })
   async getAllGifts(
-    @Query('category') category?: string,
-    @Query('isActive') isActive?: boolean,
-  ): Promise<Gift[]> {
-    return this.giftService.getAllGifts(category, isActive);
+    @Query() query: GetAllGiftsQueryDto,
+  ): Promise<{ data: GiftResponseDto[] }> {
+    const result = await this.giftService.getAllGifts(
+      query.category,
+      query.isActive,
+    );
+    return { data: result };
   }
 
   @Get('popular')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get popular gifts' })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Popular gifts retrieved successfully',
-    type: [Gift],
+    type: [GiftResponseDto],
   })
-  async getPopularGifts(@Query('limit') limit?: number): Promise<Gift[]> {
-    return this.giftService.getPopularGifts(limit);
+  async getPopularGifts(
+    @Query() query: GetPopularGiftsQueryDto,
+  ): Promise<{ data: GiftResponseDto[] }> {
+    const result = await this.giftService.getPopularGifts(query.limit);
+    return { data: result };
   }
 
   @Get('category/:category')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get gifts by category' })
   @ApiParam({ name: 'category', description: 'Gift category' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Gifts by category retrieved successfully',
-    type: [Gift],
+    type: [GiftResponseDto],
   })
   async getGiftsByCategory(
     @Param('category') category: string,
-  ): Promise<Gift[]> {
-    return this.giftService.getGiftsByCategory(category);
+  ): Promise<{ data: GiftResponseDto[] }> {
+    const result = await this.giftService.getGiftsByCategory(category);
+    return { data: result };
   }
 
   @Get(':id')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get gift by ID' })
   @ApiParam({ name: 'id', description: 'Gift ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Gift retrieved successfully',
-    type: Gift,
+    type: GiftResponseDto,
   })
-  async getGift(@Param('id') id: string): Promise<Gift> {
-    return this.giftService.getGift(id);
+  async getGift(@Param('id') id: string): Promise<{ data: GiftResponseDto }> {
+    const result = await this.giftService.getGift(id);
+    return { data: result };
   }
 
+  // Admin endpoints
   @Post()
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create new gift (Admin only)' })
+  @ApiBody({ type: CreateGiftDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Gift created successfully',
-    type: Gift,
+    type: GiftResponseDto,
   })
-  async createGift(@Body() giftData: Partial<Gift>): Promise<Gift> {
-    return this.giftService.createGift(giftData);
+  async createGift(
+    @Body() giftData: CreateGiftDto,
+  ): Promise<{ data: GiftResponseDto }> {
+    const result = await this.giftService.createGift(giftData);
+    return { data: result };
   }
 
   @Put(':id')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update gift (Admin only)' })
   @ApiParam({ name: 'id', description: 'Gift ID' })
+  @ApiBody({ type: UpdateGiftDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Gift updated successfully',
-    type: Gift,
+    type: GiftResponseDto,
   })
   async updateGift(
     @Param('id') id: string,
-    @Body() updates: Partial<Gift>,
-  ): Promise<Gift> {
-    return this.giftService.updateGift(id, updates);
+    @Body() updates: UpdateGiftDto,
+  ): Promise<{ data: GiftResponseDto }> {
+    const result = await this.giftService.updateGift(id, updates);
+    return { data: result };
   }
 
   @Delete(':id')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete gift (Admin only)' })
@@ -142,7 +150,10 @@ export class GiftController {
     status: HttpStatus.OK,
     description: 'Gift deleted successfully',
   })
-  async deleteGift(@Param('id') id: string): Promise<void> {
-    return this.giftService.deleteGift(id);
+  async deleteGift(
+    @Param('id') id: string,
+  ): Promise<{ data: { success: boolean } }> {
+    await this.giftService.deleteGift(id);
+    return { data: { success: true } };
   }
 }

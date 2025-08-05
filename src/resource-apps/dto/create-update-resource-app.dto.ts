@@ -21,6 +21,14 @@ export class CreateUpdateResourceAppDto {
   getUserProfileEndpoint: string;
 
   @ApiProperty({
+    description: 'Endpoint to get user verification',
+    example: 'https://api.example.com/user/verification',
+  })
+  @IsNotEmpty()
+  @IsString()
+  getUserVerificationEndpoint: string;
+
+  @ApiProperty({
     description: 'Endpoint to send notifications',
     example: 'https://api.example.com/notifications/send',
   })

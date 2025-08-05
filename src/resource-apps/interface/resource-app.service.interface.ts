@@ -1,4 +1,5 @@
 import { ResourceApp } from '../schema/resource-app.schema';
+import { ResourceAppDto } from '../dto/resource-app.dto';
 import { NotificationPayload } from './resource-app.helper.interface';
 
 export interface IResourceAppService {
@@ -9,11 +10,11 @@ export interface IResourceAppService {
   ): Promise<void>;
   createResourceApp(
     resourceAppData: Partial<ResourceApp>,
-  ): Promise<ResourceApp>;
+  ): Promise<ResourceAppDto>;
   updateResourceApp(
     appName: string,
     updates: Partial<ResourceApp>,
-  ): Promise<ResourceApp>;
-  getAllResourceApps(): Promise<ResourceApp[]>;
+  ): Promise<ResourceAppDto>;
+  getAllResourceApps(): Promise<ResourceAppDto[]>;
   deleteResourceApp(appName: string): Promise<boolean>;
 }

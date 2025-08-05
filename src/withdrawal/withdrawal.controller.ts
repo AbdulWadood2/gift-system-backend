@@ -26,6 +26,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorator/roles.decorator';
 import { UserRole } from '../enum/roles.enum';
 import { AppName } from '../enum/appname.enum';
+import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
+import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
+import { WithdrawalResponseDto } from './dto/withdrawal-response.dto';
 
 @ApiTags('Withdrawals')
 @Controller('withdrawals')
@@ -38,20 +41,11 @@ export class WithdrawalController {
   @Post('request/:appName')
   @ApiOperation({ summary: 'Create withdrawal request' })
   @ApiParam({ name: 'appName', description: 'Application name' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        amount: { type: 'number', description: 'Withdrawal amount' },
-        userId: { type: 'string', description: 'User ID' },
-      },
-      required: ['amount', 'userId'],
-    },
-  })
+  @ApiBody({ type: CreateWithdrawalDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Withdrawal request created successfully',
-    type: Withdrawal,
+    type: WithdrawalResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -59,20 +53,20 @@ export class WithdrawalController {
   })
   async createWithdrawalRequest(
     @Param('appName') appName: AppName,
-    @Body() body: { amount: number; userId: string },
-  ): Promise<Withdrawal> {
-    return this.withdrawalService.createWithdrawalRequest(
+    @Body() body: CreateWithdrawalDto,
+  ): Promise<{ data: WithdrawalResponseDto }> {
+    const result = await this.withdrawalService.createWithdrawalRequest(
       body.userId,
       appName,
       body.amount,
     );
+    return { data: result };
   }
 
-  @Get('user/:appName')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
+  @Get('user/:appName/:userId')
   @ApiOperation({ summary: 'Get user withdrawal history' })
   @ApiParam({ name: 'appName', description: 'Application name' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -81,16 +75,24 @@ export class WithdrawalController {
   })
   async getUserWithdrawals(
     @Param('appName') appName: AppName,
+    @Param('userId') userId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Req() req?: any,
-  ): Promise<any> {
-    return this.withdrawalService.getUserWithdrawals(
-      req.user.userId,
+  ): Promise<{
+    data: {
+      withdrawals: WithdrawalResponseDto[];
+      total: number;
+      page: number;
+      limit: number;
+    };
+  }> {
+    const result = await this.withdrawalService.getUserWithdrawals(
+      userId,
       appName,
       page,
       limit,
     );
+    return { data: result };
   }
 
   @Get('pending')
@@ -107,54 +109,69 @@ export class WithdrawalController {
   async getPendingWithdrawals(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-  ): Promise<any> {
-    return this.withdrawalService.getPendingWithdrawals(page, limit);
+  ): Promise<{
+    data: {
+      withdrawals: WithdrawalResponseDto[];
+      total: number;
+      page: number;
+      limit: number;
+    };
+  }> {
+    const result = await this.withdrawalService.getPendingWithdrawals(
+      page,
+      limit,
+    );
+    return { data: result };
   }
 
   @Post('approve/:withdrawalId')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Approve withdrawal request (Admin only)' })
   @ApiParam({ name: 'withdrawalId', description: 'Withdrawal ID' })
+  @ApiBody({ type: UpdateWithdrawalDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Withdrawal approved successfully',
-    type: Withdrawal,
+    type: WithdrawalResponseDto,
   })
   async approveWithdrawal(
     @Param('withdrawalId') withdrawalId: string,
-    @Body('notes') notes?: string,
+    @Body() body: UpdateWithdrawalDto,
     @Req() req?: any,
-  ): Promise<Withdrawal> {
-    return this.withdrawalService.approveWithdrawal(
+  ): Promise<{ data: WithdrawalResponseDto }> {
+    const result = await this.withdrawalService.approveWithdrawal(
       withdrawalId,
       req.user.userId,
-      notes,
+      body.adminNotes || '',
     );
+    return { data: result };
   }
 
   @Post('reject/:withdrawalId')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Reject withdrawal request (Admin only)' })
   @ApiParam({ name: 'withdrawalId', description: 'Withdrawal ID' })
+  @ApiBody({ type: UpdateWithdrawalDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Withdrawal rejected successfully',
-    type: Withdrawal,
+    type: WithdrawalResponseDto,
   })
   async rejectWithdrawal(
     @Param('withdrawalId') withdrawalId: string,
-    @Body('reason') reason: string,
+    @Body() body: UpdateWithdrawalDto,
     @Req() req?: any,
-  ): Promise<Withdrawal> {
-    return this.withdrawalService.rejectWithdrawal(
+  ): Promise<{ data: WithdrawalResponseDto }> {
+    const result = await this.withdrawalService.rejectWithdrawal(
       withdrawalId,
       req.user.userId,
-      reason,
+      body.adminNotes || '',
     );
+    return { data: result };
   }
 
   @Get('stats/:appName')
@@ -167,7 +184,14 @@ export class WithdrawalController {
     status: HttpStatus.OK,
     description: 'Withdrawal statistics retrieved successfully',
   })
-  async getWithdrawalStats(@Param('appName') appName: AppName): Promise<any> {
-    return this.withdrawalService.getWithdrawalStats(appName);
+  async getWithdrawalStats(@Param('appName') appName: AppName): Promise<{
+    data: {
+      totalWithdrawals: number;
+      totalAmount: number;
+      averageAmount: number;
+    };
+  }> {
+    const result = await this.withdrawalService.getWithdrawalStats(appName);
+    return { data: result };
   }
 }

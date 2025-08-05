@@ -17,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { ChargeWalletDto } from './dto/charge-wallet.dto';
@@ -36,11 +37,10 @@ export class WalletController {
     private readonly walletService: WalletService,
   ) {}
 
-  @Get('balance/:appName')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
+  @Get('balance/:appName/:userId')
   @ApiOperation({ summary: 'Get user wallet balance' })
   @ApiParam({ name: 'appName', description: 'Application name' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Wallet balance retrieved successfully',
@@ -52,13 +52,15 @@ export class WalletController {
   })
   async getBalance(
     @Param('appName') appName: AppName,
-    @Req() req: any,
-  ): Promise<WalletDto> {
-    return this.walletService.getBalance(req.user.userId, appName);
+    @Param('userId') userId: string,
+  ): Promise<{ data: WalletDto }> {
+    const result = await this.walletService.getBalance(userId, appName);
+    return { data: result };
   }
 
   @Post('charge')
   @ApiOperation({ summary: 'Charge user wallet with coins' })
+  @ApiBody({ type: ChargeWalletDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Wallet charged successfully',
@@ -68,12 +70,16 @@ export class WalletController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid request or insufficient balance',
   })
-  async chargeWallet(@Body() dto: ChargeWalletDto): Promise<WalletDto> {
-    return this.walletService.chargeWallet(dto);
+  async chargeWallet(
+    @Body() dto: ChargeWalletDto,
+  ): Promise<{ data: WalletDto }> {
+    const result = await this.walletService.chargeWallet(dto);
+    return { data: result };
   }
 
   @Post('send-gift')
   @ApiOperation({ summary: 'Send a gift to another user' })
+  @ApiBody({ type: SendGiftDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Gift sent successfully',
@@ -82,15 +88,17 @@ export class WalletController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid request or insufficient balance',
   })
-  async sendGift(@Body() dto: SendGiftDto): Promise<any> {
-    return this.walletService.sendGift(dto);
+  async sendGift(
+    @Body() dto: SendGiftDto,
+  ): Promise<{ data: { success: boolean; transactionId: string } }> {
+    const result = await this.walletService.sendGift(dto);
+    return { data: result };
   }
 
-  @Get('transactions/:appName')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
+  @Get('transactions/:appName/:userId')
   @ApiOperation({ summary: 'Get user transaction history' })
   @ApiParam({ name: 'appName', description: 'Application name' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -99,31 +107,37 @@ export class WalletController {
   })
   async getTransactionHistory(
     @Param('appName') appName: AppName,
+    @Param('userId') userId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Req() req?: any,
-  ): Promise<any> {
-    return this.walletService.getTransactionHistory(
-      req.user.userId,
+  ): Promise<{
+    data: { transactions: any[]; total: number; page: number; limit: number };
+  }> {
+    const result = await this.walletService.getTransactionHistory(
+      userId,
       appName,
       page,
       limit,
     );
+    return { data: result };
   }
 
-  @Get('user-wallets')
-  @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
-  @UseGuards(AuthGuard, RolesGuard)
+  @Get('user-wallets/:userId')
   @ApiOperation({ summary: 'Get all wallets for a user across apps' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User wallets retrieved successfully',
     type: [WalletDto],
   })
-  async getUserWallets(@Req() req: any): Promise<WalletDto[]> {
-    return this.walletService.getUserWallets(req.user.userId);
+  async getUserWallets(
+    @Param('userId') userId: string,
+  ): Promise<{ data: WalletDto[] }> {
+    const result = await this.walletService.getUserWallets(userId);
+    return { data: result };
   }
 
+  // Admin endpoints
   @Post('freeze/:userId/:appName')
   @ApiBearerAuth('JWT-auth') // Indicates Bearer Auth for Swagger UI
   @UseGuards(AuthGuard, RolesGuard)
@@ -140,8 +154,13 @@ export class WalletController {
     @Param('userId') userId: string,
     @Param('appName') appName: AppName,
     @Body('reason') reason: string,
-  ): Promise<WalletDto> {
-    return this.walletService.freezeWallet(userId, appName, reason);
+  ): Promise<{ data: WalletDto }> {
+    const result = await this.walletService.freezeWallet(
+      userId,
+      appName,
+      reason,
+    );
+    return { data: result };
   }
 
   @Post('unfreeze/:userId/:appName')
@@ -159,8 +178,9 @@ export class WalletController {
   async unfreezeWallet(
     @Param('userId') userId: string,
     @Param('appName') appName: AppName,
-  ): Promise<WalletDto> {
-    return this.walletService.unfreezeWallet(userId, appName);
+  ): Promise<{ data: WalletDto }> {
+    const result = await this.walletService.unfreezeWallet(userId, appName);
+    return { data: result };
   }
 
   @Get('stats/:appName')
@@ -173,7 +193,16 @@ export class WalletController {
     status: HttpStatus.OK,
     description: 'Wallet statistics retrieved successfully',
   })
-  async getWalletStats(@Param('appName') appName: AppName): Promise<any> {
-    return this.walletService.getWalletStats(appName);
+  async getWalletStats(
+    @Param('appName') appName: AppName,
+  ): Promise<{
+    data: {
+      totalWallets: number;
+      totalBalance: number;
+      averageBalance: number;
+    };
+  }> {
+    const result = await this.walletService.getWalletStats(appName);
+    return { data: result };
   }
 }

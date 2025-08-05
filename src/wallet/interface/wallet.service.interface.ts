@@ -6,13 +6,20 @@ import { AppName } from '../../enum/appname.enum';
 export interface IWalletService {
   getBalance(userId: string, appName: AppName): Promise<WalletDto>;
   chargeWallet(dto: ChargeWalletDto): Promise<WalletDto>;
-  sendGift(dto: SendGiftDto): Promise<any>;
+  sendGift(
+    dto: SendGiftDto,
+  ): Promise<{ success: boolean; transactionId: string }>;
   getTransactionHistory(
     userId: string,
     appName: AppName,
     page?: number,
     limit?: number,
-  ): Promise<any>;
+  ): Promise<{
+    transactions: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }>;
   getUserWallets(userId: string): Promise<WalletDto[]>;
   freezeWallet(
     userId: string,
@@ -20,5 +27,11 @@ export interface IWalletService {
     reason: string,
   ): Promise<WalletDto>;
   unfreezeWallet(userId: string, appName: AppName): Promise<WalletDto>;
-  getWalletStats(appName: AppName): Promise<any>;
+  getWalletStats(
+    appName: AppName,
+  ): Promise<{
+    totalWallets: number;
+    totalBalance: number;
+    averageBalance: number;
+  }>;
 }

@@ -1,5 +1,6 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { Withdrawal } from './schema/withdrawal.schema';
+import { WithdrawalResponseDto } from './dto/withdrawal-response.dto';
 import { IWithdrawalService } from './interface/withdrawal.service.interface';
 import { IWithdrawalHelper } from './interface/withdrawal.helper.interface';
 import { IWalletHelper } from '../wallet/interface/wallet.helper.interface';
@@ -24,7 +25,7 @@ export class WithdrawalService implements IWithdrawalService {
     userId: string,
     appName: AppName,
     amount: number,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     try {
       // Validate resource app exists
       await this.resourceAppHelper.getResourceApp(appName);
@@ -106,7 +107,12 @@ export class WithdrawalService implements IWithdrawalService {
     appName: AppName,
     page?: number,
     limit?: number,
-  ): Promise<any> {
+  ): Promise<{
+    withdrawals: WithdrawalResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     try {
       return await this.withdrawalHelper.getUserWithdrawals(
         userId,
@@ -119,7 +125,15 @@ export class WithdrawalService implements IWithdrawalService {
     }
   }
 
-  async getPendingWithdrawals(page?: number, limit?: number): Promise<any> {
+  async getPendingWithdrawals(
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    withdrawals: WithdrawalResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     try {
       return await this.withdrawalHelper.getPendingWithdrawals(page, limit);
     } catch (error) {
@@ -131,7 +145,7 @@ export class WithdrawalService implements IWithdrawalService {
     withdrawalId: string,
     adminUserId: string,
     notes?: string,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     try {
       const withdrawal = await this.withdrawalHelper.approveWithdrawal(
         withdrawalId,
@@ -156,7 +170,7 @@ export class WithdrawalService implements IWithdrawalService {
     withdrawalId: string,
     adminUserId: string,
     reason: string,
-  ): Promise<Withdrawal> {
+  ): Promise<WithdrawalResponseDto> {
     try {
       const withdrawal = await this.withdrawalHelper.rejectWithdrawal(
         withdrawalId,
@@ -177,7 +191,13 @@ export class WithdrawalService implements IWithdrawalService {
     }
   }
 
-  async getWithdrawalStats(appName: AppName): Promise<any> {
+  async getWithdrawalStats(
+    appName: AppName,
+  ): Promise<{
+    totalWithdrawals: number;
+    totalAmount: number;
+    averageAmount: number;
+  }> {
     try {
       return await this.withdrawalHelper.getWithdrawalStats(appName);
     } catch (error) {
