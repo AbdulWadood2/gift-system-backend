@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Gift, GiftSchema } from './schema/gift.schema';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { BunnyModule } from 'src/bunny/bunny.module';
 import { GiftController } from './gift.controller';
 import { GiftService } from './gift.service';
 
@@ -12,6 +13,7 @@ import { GiftService } from './gift.service';
     MongooseModule.forFeature([{ name: Gift.name, schema: GiftSchema }]),
     UserModule,
     AuthModule,
+    BunnyModule,
   ],
   controllers: [GiftController],
   providers: [
