@@ -12,9 +12,6 @@ export class Gift extends Document {
   @Prop({ type: Number, required: true, min: 1 })
   coinValue: number;
 
-  @Prop({ type: String, required: true })
-  lottieUrl: string;
-
   @Prop({ type: String, default: null })
   thumbnailUrl: string;
 

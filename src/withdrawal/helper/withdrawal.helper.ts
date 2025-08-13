@@ -5,7 +5,7 @@ import { WithdrawalResponseDto } from '../dto/withdrawal-response.dto';
 import { Model } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
 import { IWithdrawalHelper } from '../interface/withdrawal.helper.interface';
-import { WithdrawalStatus } from '../../wallet/schema/wallet.schema';
+import { WithdrawalStatus } from '../dto/create-withdrawal.dto';
 
 @Injectable()
 export class WithdrawalHelper implements IWithdrawalHelper {
@@ -100,7 +100,7 @@ export class WithdrawalHelper implements IWithdrawalHelper {
       updateData.rejectionReason = notes;
     }
 
-    if (status === WithdrawalStatus.PROCESSED) {
+    if (status === WithdrawalStatus.COMPLETED) {
       updateData.processedAt = new Date();
     }
 

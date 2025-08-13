@@ -45,17 +45,11 @@ export class GiftResponseDto {
   })
   coinValue: number;
 
-  @ApiProperty({
-    description: 'URL to the Lottie animation file',
-    example: 'https://example.com/animations/rose.json',
-  })
-  lottieUrl: string;
-
   @ApiPropertyOptional({
     description: 'URL to the gift thumbnail image',
     example: 'https://example.com/thumbnails/rose.png',
   })
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
 
   @ApiPropertyOptional({
     description: 'Description of the gift',
@@ -135,4 +129,4 @@ export class GiftResponseDto {
     example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt: Date;
-} 
+}

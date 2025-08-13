@@ -39,14 +39,6 @@ export class UpdateGiftDto {
   coinValue?: number;
 
   @ApiPropertyOptional({
-    description: 'URL to the Lottie animation file',
-    example: 'https://example.com/animations/rose.json',
-  })
-  @IsOptional()
-  @IsUrl()
-  lottieUrl?: string;
-
-  @ApiPropertyOptional({
     description: 'URL to the gift thumbnail image',
     example: 'https://example.com/thumbnails/rose.png',
   })
@@ -148,4 +140,4 @@ export class UpdateGiftDto {
   })
   @IsOptional()
   lastUsedAt?: Date;
-} 
+}

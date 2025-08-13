@@ -9,6 +9,12 @@ export class WithdrawalResponseDto {
   _id: string;
 
   @ApiProperty({
+    description: 'Withdrawal ID',
+    example: 'WTH-2024-001',
+  })
+  withdrawalId: string;
+
+  @ApiProperty({
     description: 'ID of the user requesting withdrawal',
     example: '507f1f77bcf86cd799439011',
   })
@@ -24,7 +30,19 @@ export class WithdrawalResponseDto {
     description: 'Amount to withdraw',
     example: 1000,
   })
-  amount: number;
+  coinAmount: number;
+
+  @ApiProperty({
+    description: 'Balance before withdrawal',
+    example: 5000,
+  })
+  balanceBefore: number;
+
+  @ApiProperty({
+    description: 'Balance after withdrawal',
+    example: 4000,
+  })
+  balanceAfter: number;
 
   @ApiProperty({
     description: 'Withdrawal method',
@@ -63,6 +81,30 @@ export class WithdrawalResponseDto {
     example: 'Approved after verification',
   })
   adminNotes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Admin user ID who reviewed the withdrawal',
+    example: '507f1f77bcf86cd799439011',
+  })
+  adminUserId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Date when withdrawal was reviewed',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  reviewedAt?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Review notes from admin',
+    example: 'Approved after verification',
+  })
+  reviewNotes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Reason for rejection if applicable',
+    example: 'Insufficient verification',
+  })
+  rejectionReason?: string;
 
   @ApiPropertyOptional({
     description: 'Transaction ID from payment processor',

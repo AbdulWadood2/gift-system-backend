@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { WithdrawalStatus } from '../../wallet/schema/wallet.schema';
+import { WithdrawalStatus } from '../dto/create-withdrawal.dto';
 import { AppName } from '../../enum/appname.enum';
 
 @Schema({ timestamps: true })
@@ -27,8 +27,9 @@ export class Withdrawal extends Document {
     type: String,
     enum: WithdrawalStatus,
     default: WithdrawalStatus.PENDING,
+    required: false,
   })
-  status: WithdrawalStatus;
+  status?: WithdrawalStatus;
 
   @Prop({ type: String, default: null })
   adminUserId: string;

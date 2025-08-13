@@ -1,10 +1,12 @@
 import { Withdrawal } from '../schema/withdrawal.schema';
 
+import { WithdrawalResponseDto } from '../dto/withdrawal-response.dto';
+
 export interface IWithdrawalHelper {
   createWithdrawalRequest(
     withdrawalData: Partial<Withdrawal>,
-  ): Promise<Withdrawal>;
-  getWithdrawalRequest(withdrawalId: string): Promise<Withdrawal>;
+  ): Promise<WithdrawalResponseDto>;
+  getWithdrawalRequest(withdrawalId: string): Promise<WithdrawalResponseDto>;
   getUserWithdrawals(
     userId: string,
     appName: string,
@@ -16,17 +18,17 @@ export interface IWithdrawalHelper {
     status: string,
     adminUserId: string,
     notes?: string,
-  ): Promise<Withdrawal>;
+  ): Promise<WithdrawalResponseDto>;
   approveWithdrawal(
     withdrawalId: string,
     adminUserId: string,
     notes?: string,
-  ): Promise<Withdrawal>;
+  ): Promise<WithdrawalResponseDto>;
   rejectWithdrawal(
     withdrawalId: string,
     adminUserId: string,
     reason: string,
-  ): Promise<Withdrawal>;
+  ): Promise<WithdrawalResponseDto>;
   getPendingWithdrawals(page?: number, limit?: number): Promise<any>;
   getWithdrawalStats(appName: string): Promise<any>;
   validateWithdrawalEligibility(

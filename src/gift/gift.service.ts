@@ -38,7 +38,10 @@ export class GiftService implements IGiftService {
     }
   }
 
-  async updateGift(giftId: string, updates: Partial<Gift>): Promise<GiftResponseDto> {
+  async updateGift(
+    giftId: string,
+    updates: Partial<Gift>,
+  ): Promise<GiftResponseDto> {
     try {
       return await this.giftHelper.updateGift(giftId, updates);
     } catch (error) {

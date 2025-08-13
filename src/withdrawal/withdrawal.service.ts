@@ -81,7 +81,6 @@ export class WithdrawalService implements IWithdrawalService {
         coinAmount: amount,
         balanceBefore: wallet.balance,
         balanceAfter: wallet.balance - amount,
-        status: WithdrawalStatus.PENDING,
         metadata: {
           walletBalance: wallet.balance,
           requestSource: 'api',
@@ -191,9 +190,7 @@ export class WithdrawalService implements IWithdrawalService {
     }
   }
 
-  async getWithdrawalStats(
-    appName: AppName,
-  ): Promise<{
+  async getWithdrawalStats(appName: AppName): Promise<{
     totalWithdrawals: number;
     totalAmount: number;
     averageAmount: number;

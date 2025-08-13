@@ -264,7 +264,6 @@ export class WalletService implements IWalletService {
           name: gift.name,
           displayName: gift.displayName,
           coinValue: gift.coinValue,
-          lottieUrl: gift.lottieUrl,
         },
         senderBalance: senderNewBalance,
         recipientBalance: recipientNewBalance,
