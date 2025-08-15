@@ -6,9 +6,16 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBody, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiConsumes,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Multer } from 'multer'; // ✅ Import Multer types correctly
 import { IBunnyHelper } from './interface/bunny.helper.interface';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -36,15 +43,16 @@ export class BunnyController {
       properties: {
         file: { type: 'string', format: 'binary' },
         storageUrl: { type: 'string' },
-        userId: { type: 'string' }, // Now optional, just remove 'required: false' (OpenAPI will treat as optional if not required)
       },
     },
   })
   async uploadFile(
     @UploadedFile() file: Multer.File,
     @Body() body: { storageUrl: string; userId?: string },
+    @Req() req: Request,
   ): Promise<{ data: string }> {
-    const { storageUrl, userId } = body;
+    const userId = req['fullUser']._id.toString();
+    const { storageUrl } = body;
     if (!storageUrl) throw new Error('storageUrl is required');
     return {
       data: await this.bunnyHelper.uploadFile(

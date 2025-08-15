@@ -20,10 +20,11 @@ export class GiftHelper implements IGiftHelper {
       throw new BadRequestException('Gift not found');
     }
 
-    const giftProcessed = plainToInstance(GiftResponseDto, gift.toObject(), {
+    const giftResponse = plainToInstance(GiftResponseDto, gift, {
       excludeExtraneousValues: true,
     });
-    return await this.processGiftFileUrls(giftProcessed);
+    // Process file URLs for the gift
+    return await this.processGiftFileUrls(giftResponse);
   }
 
   async getAllGifts(
@@ -45,36 +46,44 @@ export class GiftHelper implements IGiftHelper {
       .sort({ popularityScore: -1 })
       .lean();
 
-    const giftsProcessed = plainToInstance(GiftResponseDto, gifts, {
+    // Process file URLs for all gifts
+    const giftsResponse = plainToInstance(GiftResponseDto, gifts, {
       excludeExtraneousValues: true,
     });
-    return await Promise.all(giftsProcessed.map((gift) => this.processGiftFileUrls(gift)));
+    return await Promise.all(
+      giftsResponse.map((gift) => this.processGiftFileUrls(gift)),
+    );
   }
 
   async createGift(giftData: Partial<Gift>): Promise<GiftResponseDto> {
     // is file exists
+    if (giftData.lottieUrl) {
+      const fileKey = this.bunnyHelper.getKeyFromUrl(giftData.lottieUrl);
+      const fileExists = await this.bunnyHelper.fileExists(fileKey);
+      if (!fileExists) {
+        throw new BadRequestException('Lottie file does not exist');
+      }
+    }
     if (giftData.thumbnailUrl) {
       const fileKey = this.bunnyHelper.getKeyFromUrl(giftData.thumbnailUrl);
-      giftData.thumbnailUrl = fileKey;
-      const fileExists = await this.bunnyHelper.fileExists(
-        giftData.thumbnailUrl,
-      );
+      const fileExists = await this.bunnyHelper.fileExists(fileKey);
       if (!fileExists) {
         throw new BadRequestException('Thumbnail file does not exist');
       }
     }
-    const gift = await this.giftModel.create(giftData);
-    const giftProcessed = plainToInstance(GiftResponseDto, gift.toObject(), {
+    const gift = new this.giftModel(giftData);
+    const savedGift = await gift.save();
+    const processedGift = plainToInstance(GiftResponseDto, savedGift, {
       excludeExtraneousValues: true,
     });
-    return await this.processGiftFileUrls(giftProcessed);
+    return await this.processGiftFileUrls(processedGift);
   }
 
   async updateGift(
     giftId: string,
     updates: Partial<Gift>,
   ): Promise<GiftResponseDto> {
-    let updatedGift = await this.giftModel.findByIdAndUpdate(
+    const updatedGift = await this.giftModel.findByIdAndUpdate(
       giftId,
       { $set: updates },
       { new: true },
@@ -83,11 +92,11 @@ export class GiftHelper implements IGiftHelper {
     if (!updatedGift) {
       throw new BadRequestException('Gift not found');
     }
-    const gift = plainToInstance(GiftResponseDto, updatedGift.toObject(), {
+
+    const processedGift = plainToInstance(GiftResponseDto, updatedGift, {
       excludeExtraneousValues: true,
     });
-    const processedGift = await this.processGiftFileUrls(gift);
-    return processedGift;
+    return await this.processGiftFileUrls(processedGift);
   }
 
   async deleteGift(giftId: string): Promise<void> {
@@ -111,14 +120,13 @@ export class GiftHelper implements IGiftHelper {
       .limit(limit)
       .lean();
 
-    // Process file URLs for popular gifts
-    const processedGifts = await Promise.all(
-      gifts.map((gift) => this.processGiftFileUrls(gift.toObject())),
-    );
-
-    return plainToInstance(GiftResponseDto, processedGifts, {
+    const giftsResponse = plainToInstance(GiftResponseDto, gifts, {
       excludeExtraneousValues: true,
     });
+    // Process file URLs for popular gifts
+    return await Promise.all(
+      giftsResponse.map((gift) => this.processGiftFileUrls(gift)),
+    );
   }
 
   async getGiftsByCategory(category: string): Promise<GiftResponseDto[]> {
@@ -126,38 +134,53 @@ export class GiftHelper implements IGiftHelper {
       .find({ category, isActive: true })
       .sort({ coinValue: 1 })
       .lean();
-    const giftsProcessed = plainToInstance(GiftResponseDto, gifts, {
+
+    const processedGifts = plainToInstance(GiftResponseDto, gifts, {
       excludeExtraneousValues: true,
     });
-    return await Promise.all(giftsProcessed.map((gift) => this.processGiftFileUrls(gift)));
+    // Process file URLs for category gifts
+    return await Promise.all(
+      processedGifts.map((gift) => this.processGiftFileUrls(gift)),
+    );
   }
 
   // New method to process file URLs and validate file existence
   private async processGiftFileUrls(
     gift: GiftResponseDto,
   ): Promise<GiftResponseDto> {
-    const processedGift = gift;
+    const processedGift: GiftResponseDto = { ...gift };
+
+    // Process lottieUrl if it exists
+    if (gift.lottieUrl) {
+      // Extract file key from URL
+      const fileKey = this.bunnyHelper.getKeyFromUrl(gift.lottieUrl);
+
+      // Check if file exists
+      const fileExists = await this.bunnyHelper.fileExists(fileKey);
+
+      if (fileExists) {
+        // Generate signed URL
+        const signedUrl = await this.bunnyHelper.getSignedUrl(fileKey);
+        if (signedUrl) {
+          processedGift.lottieUrl = signedUrl;
+        }
+      }
+    }
 
     // Process thumbnailUrl if it exists
     if (gift.thumbnailUrl) {
-      try {
-        // Extract file key from URL
-        const fileKey = this.bunnyHelper.getKeyFromUrl(gift.thumbnailUrl);
+      // Extract file key from URL
+      const fileKey = this.bunnyHelper.getKeyFromUrl(gift.thumbnailUrl);
 
-        // Check if file exists
-        const fileExists = await this.bunnyHelper.fileExists(fileKey);
+      // Check if file exists
+      const fileExists = await this.bunnyHelper.fileExists(fileKey);
 
-        if (fileExists) {
-          // Generate signed URL
-          const signedUrl = await this.bunnyHelper.getSignedUrl(fileKey);
-          if (signedUrl) {
-            processedGift.thumbnailUrl = signedUrl;
-          }
-        } else {
-          processedGift.thumbnailUrl = null; // Set to null if file doesn't exist
+      if (fileExists) {
+        // Generate signed URL
+        const signedUrl = await this.bunnyHelper.getSignedUrl(fileKey);
+        if (signedUrl) {
+          processedGift.thumbnailUrl = signedUrl;
         }
-      } catch (error) {
-        processedGift.thumbnailUrl = null;
       }
     }
 

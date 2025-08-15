@@ -7,7 +7,6 @@ import {
   IsArray,
   IsObject,
   Min,
-  IsUrl,
 } from 'class-validator';
 
 export class AnimationSettingsDto {
@@ -59,9 +58,16 @@ export class CreateGiftDto {
   @Min(1)
   coinValue: number;
 
+  @ApiProperty({
+    description: 'URL to the Lottie animation file',
+    example: 'https://example.com/animations/rose.json',
+  })
+  @IsOptional()
+  lottieUrl?: string;
+
   @ApiPropertyOptional({
     description: 'URL to the gift thumbnail image',
-    example: 'thumbnails/rose.png',
+    example: 'https://example.com/thumbnails/rose.png',
   })
   @IsOptional()
   thumbnailUrl?: string;
@@ -126,4 +132,4 @@ export class CreateGiftDto {
   @IsOptional()
   @IsString()
   createdBy?: string;
-} 
+}

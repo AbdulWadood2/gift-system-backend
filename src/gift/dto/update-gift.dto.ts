@@ -7,7 +7,6 @@ import {
   IsArray,
   IsObject,
   Min,
-  IsUrl,
 } from 'class-validator';
 import { AnimationSettingsDto } from './create-gift.dto';
 
@@ -39,11 +38,17 @@ export class UpdateGiftDto {
   coinValue?: number;
 
   @ApiPropertyOptional({
-    description: 'URL to the gift thumbnail image',
-    example: 'https://example.com/thumbnails/rose.png',
+    description: 'URL to the Lottie animation file',
+    example: '/animations/rose.json',
   })
   @IsOptional()
-  @IsUrl()
+  lottieUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL to the gift thumbnail image',
+    example: '/thumbnails/rose.png',
+  })
+  @IsOptional()
   thumbnailUrl?: string;
 
   @ApiPropertyOptional({
@@ -140,4 +145,4 @@ export class UpdateGiftDto {
   })
   @IsOptional()
   lastUsedAt?: Date;
-}
+} 
